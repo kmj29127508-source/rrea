@@ -138,3 +138,5 @@ body.present .chart .lbl, body.present .chart .val { font-size: 15px; }
 #detailSection .hint code { background: var(--soft); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
 #detailBody h3 { font-size: 15px; color: var(--ink); margin: 18px 0 10px; }
 #detailBody h4 { font-size: 13px; color: var(--muted); margin: 14px 0 6px; font-weight: 600; }
+
+.chart svg .lbl { fill: #6a2c7a; font-weight: 600; }

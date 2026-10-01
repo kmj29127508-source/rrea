@@ -49,6 +49,22 @@ function progressSVG(production) {
     const yb = yNew(newOrders[i]);
     if (newOrders[i] > 0) s += `<rect x="${(x(i) - bw / 2).toFixed(1)}" y="${yb.toFixed(1)}" width="${bw.toFixed(1)}" height="${(y1bot - yb).toFixed(1)}" fill="${ACCENT_COLOR}" fill-opacity="0.55"><title>${p.step}번째 · ${esc(p.sku_nm)} · 새로 처리가능 ${newOrders[i]}건</title></rect>`;
   });
+  // 제일 많이 완성시킨 상품 이름표(최대 4개, 겹치지 않게) — "뭘 만드는지" 바로 보이게
+  // 글자 수가 있는 라벨이라 '순번 차이'가 아니라 '실제 화면 픽셀 거리'로 겹침을 판단함
+  const order = production.map((_, i) => i).sort((a, b) => newOrders[b] - newOrders[a]);
+  const placedX = [];
+  let labelRow = 0;
+  for (const i of order.slice(0, 20)) {
+    if (placedX.length >= 4 || newOrders[i] <= 0) break;
+    const xi = x(i);
+    const labelW = (esc(production[i].sku_nm).length + 5) * 6.2;   // 대략적인 라벨 폭(px)
+    if (placedX.some((p2) => Math.abs(xi - p2) < labelW)) continue;
+    placedX.push(xi);
+    const yb = yNew(newOrders[i]);
+    const ly = yb - 6 - (labelRow % 2) * 13;   // 그래도 가까우면 한 줄씩 번갈아 높이를 다르게
+    labelRow++;
+    s += `<text class="lbl" x="${xi.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" font-size="10.5">${esc(production[i].sku_nm)} +${newOrders[i]}</text>`;
+  }
   let pr1 = "", pd1 = "";
   cumReady.forEach((v, i) => { pr1 += `${i ? "L" : "M"}${x(i).toFixed(1)},${yCumOrd(v).toFixed(1)} `; });
   cumDone.forEach((v, i) => { pd1 += `${i ? "L" : "M"}${x(i).toFixed(1)},${yCumOrd(v).toFixed(1)} `; });
