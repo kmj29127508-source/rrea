@@ -51,7 +51,7 @@ const QTY_VS_DEMAND_NOTE =
   "한 사람이 대량으로 시키면 개수는 크지만 주문 수는 작을 수 있어요.";
 
 const PRESETS = [
-  { name: "baseline", label: "baseline (교수님이 주신 순서)", config: "sort:code", fixed: true,
+  { name: "baseline", label: "baseline", config: "sort:code", fixed: true,
     help: "비교 기준. 확인해보니 상품코드 오름차순과 완전히 같았어요(27일 전부)." },
   { name: "search:genetic", label: "자동 탐색(유전 알고리즘)", config: "search:genetic", fixed: true,
     help: "규칙 하나로 정하는 대신, 여러 순서 후보를 섞고 바꿔가며 선반 사용량이 가장 낮아지는 쪽으로 계속 개선한 결과예요. 계산이 느린 대신(수 초) 대체로 제일 낮은 칸 수가 나와요." },
