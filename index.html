@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>생산순서 최적화 방법 비교</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="top">
+  <div>
+    <h1>생산순서 최적화 방법 비교</h1>
+    <p id="subtitle">데이터를 불러오는 중…</p>
+  </div>
+  <button id="btnPresent" type="button">발표 모드</button>
+</header>
+<div id="banner" class="banner" hidden></div>
+<button id="btnExit" type="button" class="exit">설정 열기 (Esc)</button>
+
+<div class="layout">
+  <aside class="panel" id="panel">
+
+    <section>
+      <h3>1. 데이터 넣기</h3>
+      <label class="drop" id="drop">
+        results.csv 를 여기에 끌어놓거나 클릭해서 선택
+        <input id="fileInput" type="file" accept=".csv,text/csv" hidden>
+      </label>
+      <p id="loadMsg" class="load-msg"></p>
+    </section>
+
+    <section>
+      <h3>2. 규칙 조립기 — 순서를 어떻게 정할지 직접 만들기</h3>
+
+      <div class="builder">
+        <div class="brow">
+          <label class="radio"><input type="radio" name="bfam" id="bFamilySort" value="sort"> 정렬형 <span class="small">(한 번에 순서 결정)</span></label>
+          <label class="radio"><input type="radio" name="bfam" id="bFamilyGreedy" value="greedy" checked> 그리디형 <span class="small">(매 순간 다시 계산)</span></label>
+        </div>
+
+        <div id="sortBlock" hidden>
+          <label class="field">기준
+            <select id="bSortKey"></select>
+          </label>
+        </div>
+
+        <div id="greedyBlock">
+          <label class="field">1순위 — 매 순간 이걸로 SKU를 골라요
+            <select id="bPrimary"></select>
+          </label>
+          <p class="help" id="bPrimaryHelp"></p>
+          <label class="field">2순위 — 1순위가 동점이면
+            <select id="bTie2"></select>
+          </label>
+          <label class="field">3순위 — 그래도 동점이면
+            <select id="bTie3"></select>
+          </label>
+        </div>
+
+        <p class="sentence" id="bSentence"></p>
+        <p class="miss" id="bMissing" hidden></p>
+        <button id="bAddBtn" type="button" class="add-btn">+ 이 규칙 추가하기</button>
+      </div>
+
+      <div class="quickwrap">
+        <span class="small">빠른 예시로 채우기</span>
+        <div id="quickFills" class="btns"></div>
+      </div>
+    </section>
+
+    <section>
+      <h3>3. 비교할 목록</h3>
+      <ul id="itemList" class="item-list"></ul>
+    </section>
+
+    <section>
+      <h3>4. 파라미터</h3>
+      <div id="scenarioWrap">
+        <label class="field">시나리오 (피커 수 등)
+          <select id="scenario"></select>
+        </label>
+      </div>
+      <label class="field">선반 한도 (칸)
+        <input id="cap" type="number" min="0" step="1" value="200">
+      </label>
+      <label class="field">판정 기준 1순위
+        <select id="crit1"></select>
+      </label>
+      <label class="field">2순위
+        <select id="crit2"></select>
+      </label>
+      <label class="field">3순위
+        <select id="crit3"></select>
+      </label>
+    </section>
+
+    <section>
+      <h3>5. 날짜 선택</h3>
+      <div class="btns">
+        <button id="dAll" type="button">전체</button>
+        <button id="dMon" type="button">월요일만</button>
+        <button id="dWeek" type="button">평일만</button>
+        <button id="dNone" type="button">해제</button>
+      </div>
+      <div id="dateBox" class="box dates"></div>
+    </section>
+
+  </aside>
+
+  <main id="main">
+    <section id="kpis" class="kpis"></section>
+
+    <section>
+      <h2>규칙별 순위</h2>
+      <div class="table-wrap"><table id="rankTable"></table></div>
+    </section>
+
+    <section>
+      <div class="sec-head">
+        <h2>지표 비교</h2>
+        <select id="barMetric" aria-label="막대그래프 지표"></select>
+        <select id="barSort" aria-label="정렬">
+          <option value="rank">판정 순위 순</option>
+          <option value="value">값 낮은 순</option>
+        </select>
+      </div>
+      <div id="barChart" class="chart"></div>
+    </section>
+
+    <section>
+      <div class="sec-head">
+        <h2>날짜별 추이</h2>
+        <select id="lineMetric" aria-label="선그래프 지표"></select>
+      </div>
+      <div id="lineChart" class="chart"></div>
+      <div id="legend" class="legend"></div>
+    </section>
+
+    <section id="detailSection">
+      <h2>상세 그래프 — 특정 날짜·방법 하나</h2>
+      <p class="hint">파이썬 <code>export_detail.py</code>로 내보낸 JSON 파일을 끌어놓으면,
+        그 (날짜·방법) 하나의 생산 진행 / 선반 점유 그래프가 보여요.
+        규칙 조립기에서 고른 조합을 그대로 <code>config</code> 값으로 넣어 내보내면 돼요.</p>
+      <label class="drop" id="detailDrop">
+        detail JSON 파일을 여기에 끌어놓거나 클릭해서 선택
+        <input id="detailInput" type="file" accept=".json,application/json" hidden>
+      </label>
+      <p id="detailMsg" class="load-msg"></p>
+      <div id="detailBody" hidden>
+        <h3 id="detailTitle"></h3>
+        <h4>생산 진행에 따른 주문 완료</h4>
+        <div id="progressChart" class="chart"></div>
+        <h4>시간에 따른 선반 사용량</h4>
+        <div id="shelfChart" class="chart"></div>
+      </div>
+    </section>
+
+    <section id="notes" class="notes"></section>
+  </main>
+</div>
+
+<script src="data/sample_results.js" onerror="this.onerror=null"></script>
+<script src="app.js"></script>
+</body>
+</html>
