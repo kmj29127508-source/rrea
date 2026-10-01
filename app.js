@@ -306,20 +306,22 @@ function progressSVG(production) {
     if (newOrders[i] > 0) s += `<rect x="${(x(i) - bw / 2).toFixed(1)}" y="${yb.toFixed(1)}" width="${bw.toFixed(1)}" height="${(y1bot - yb).toFixed(1)}" fill="${ACCENT_COLOR}" fill-opacity="0.55"><title>${p.step}번째 · ${esc(p.sku_nm)} · 새로 처리가능 ${newOrders[i]}건</title></rect>`;
   });
   // 제일 많이 완성시킨 상품 이름표(최대 4개, 겹치지 않게) — "뭘 만드는지" 바로 보이게
-  // 글자 수가 있는 라벨이라 '순번 차이'가 아니라 '실제 화면 픽셀 거리'로 겹침을 판단함
+  // 겹침 판정: 새 라벨 폭 + 이미 놓인 라벨 폭을 "둘 다" 반영(한쪽만 보면 긴 이름에서 겹침)
+  const labelWidthOf = (text) => (text.length + 2) * 6.3;   // text는 실제로 렌더링될 전체 글자(이름+숫자)여야 함
   const order = production.map((_, i) => i).sort((a, b) => newOrders[b] - newOrders[a]);
-  const placedX = [];
+  const placed = [];   // {x, halfW}
   let labelRow = 0;
   for (const i of order.slice(0, 20)) {
-    if (placedX.length >= 4 || newOrders[i] <= 0) break;
+    if (placed.length >= 4 || newOrders[i] <= 0) break;
     const xi = x(i);
-    const labelW = (esc(production[i].sku_nm).length + 5) * 6.2;
-    if (placedX.some((p2) => Math.abs(xi - p2) < labelW)) continue;
-    placedX.push(xi);
+    const labelText = `${production[i].sku_nm} +${newOrders[i]}`;
+    const halfW = labelWidthOf(labelText) / 2;
+    if (placed.some((q) => Math.abs(xi - q.x) < halfW + q.halfW + 8)) continue;
+    placed.push({ x: xi, halfW });
     const yb = yNew(newOrders[i]);
     const ly = yb - 6 - (labelRow % 2) * 13;
     labelRow++;
-    s += `<text class="lbl" x="${xi.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" font-size="10.5">${esc(production[i].sku_nm)} +${newOrders[i]}</text>`;
+    s += `<text class="lbl" x="${xi.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" font-size="10.5">${esc(labelText)}</text>`;
   }
   let pr1 = "", pd1 = "";
   cumReady.forEach((v, i) => { pr1 += `${i ? "L" : "M"}${x(i).toFixed(1)},${yCumOrd(v).toFixed(1)} `; });
@@ -334,6 +336,23 @@ function progressSVG(production) {
     const yb = yDur(durMin[i]);
     s += `<rect x="${(x(i) - bw / 2).toFixed(1)}" y="${yb.toFixed(1)}" width="${bw.toFixed(1)}" height="${(y2bot - yb).toFixed(1)}" fill="#a1d99b"><title>${p.step}번째 · ${esc(p.sku_nm)} · 생산시간 ${durMin[i].toFixed(1)}분</title></rect>`;
   });
+  // 생산시간이 제일 오래 걸린 제품 이름표(최대 4개) — "지금 뭘 만드는지, 얼마나 걸리는지"
+  // 겹침 판정: 새 라벨 폭 + 이미 놓인 라벨 폭을 "둘 다" 반영해야 함(한쪽만 보면 긴 이름에서 겹침)
+  const durOrder = production.map((_, i) => i).sort((a, b) => durMin[b] - durMin[a]);
+  const durPlaced = [];   // {x, halfW}
+  let durRow = 0;
+  for (const i of durOrder.slice(0, 30)) {
+    if (durPlaced.length >= 4 || durMin[i] <= 0) break;
+    const xi = x(i);
+    const labelText = `${production[i].sku_nm} ${durMin[i].toFixed(0)}분`;
+    const halfW = labelWidthOf(labelText) / 2;
+    if (durPlaced.some((q) => Math.abs(xi - q.x) < halfW + q.halfW + 8)) continue;
+    durPlaced.push({ x: xi, halfW });
+    const yb = yDur(durMin[i]);
+    const ly = yb - 6 - (durRow % 2) * 13;
+    durRow++;
+    s += `<text class="lbl" x="${xi.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" font-size="10.5">${esc(labelText)}</text>`;
+  }
   let pl2 = "";
   cumH.forEach((v, i) => { pl2 += `${i ? "L" : "M"}${x(i).toFixed(1)},${yCumH(v).toFixed(1)} `; });
   s += `<path d="${pl2}" fill="none" stroke="#006d2c" stroke-width="2.2"/>`;
@@ -368,6 +387,8 @@ function shelfSVG(timeline, cap) {
   }
   return s + "</svg>";
 }
+
+
 
 function barSVG(items, { cap = null, d = 0 } = {}) {
   const W = 960, L = 230, R = 90, rowH = 34, top = 30, bottom = 30;
